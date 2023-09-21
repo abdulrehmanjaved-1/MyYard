@@ -6,21 +6,38 @@ function LobbyScreen() {
   const [room, setRoom] = useState("")
   const [stream, setStream] = useState()
   const socket=useSocket();
-  const handleStartStreaming=useCallback(async (e)=>{
+  const handleStartStreaming = useCallback(async (e) => {
     e.preventDefault();
-    socket.emit("Joined",room)
-    const stream=await navigator.mediaDevices.getUserMedia({
-      audio:true,
-      video:true
-    })
-    setStream(stream)
-
-    socket.on("SendStreamNow",(id)=>{
-      console.log('stream sended by ',id)
-    })
-    
-    socket.emit("final",stream)
-  },[room,socket])
+  
+    try {
+      const myStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true
+      });
+  
+      // Now that you have the stream, you can set it as state or do further processing
+      setStream(myStream);
+  
+      // // Assuming you have a WebSocket connection named "socket"
+      // socket.on("SendStreamNow", (id) => {
+      //   console.log('stream sent by ', id);
+      // });
+  
+      myStream.getTracks().forEach((track) => {
+        console.log("my stream is ", track);
+        socket.emit("track", track); // Emit the track to the server
+      });
+  
+      // Alternatively, you can send the whole stream object (not recommended, as mentioned earlier)
+      // socket.emit("final", myStream);
+  
+    } catch (error) {
+      // Handle any errors that might occur when getting the user's media
+      console.error("Error getting user media:", error);
+    }
+  }, [socket]);
+  
+  
   return (
     <div>
       <h1>Lobby Screen</h1>
