@@ -1,11 +1,23 @@
 import React, { useCallback, useState } from 'react'
 import {useSocket} from "../context/SocketProvider"
 import ReactPlayer from "react-player"
+// import peer from '../service/peer'
 
 function LobbyScreen() {
   const [room, setRoom] = useState("")
   const [stream, setStream] = useState()
   const socket=useSocket();
+  const peer = new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: [
+          "stun:stun.l.google.com:19302",
+          "stun:global.stun.twilio.com:3478",
+        ],
+      },
+    ],
+  });
+
   const handleStartStreaming = useCallback(async (e) => {
     e.preventDefault();
   
@@ -15,27 +27,27 @@ function LobbyScreen() {
         video: true
       });
   
-      // Now that you have the stream, you can set it as state or do further processing
-      setStream(myStream);
-  
-      // // Assuming you have a WebSocket connection named "socket"
-      // socket.on("SendStreamNow", (id) => {
-      //   console.log('stream sent by ', id);
-      // });
-  
+      // Add the tracks to the peer connection
       myStream.getTracks().forEach((track) => {
-        console.log("my stream is ", track);
-        socket.emit("track", track); // Emit the track to the server
+        peer.addTrack(track, myStream);
       });
   
-      // Alternatively, you can send the whole stream object (not recommended, as mentioned earlier)
-      // socket.emit("final", myStream);
+      // Create an offer
+      const offer = await peer.createOffer();
+      await peer.setLocalDescription(offer);
+  
+      // Send the offer to the server
+      socket.emit('offer', peer.localDescription);
+  
+      // Set the stream in state
+      setStream(myStream);
   
     } catch (error) {
       // Handle any errors that might occur when getting the user's media
       console.error("Error getting user media:", error);
     }
   }, [socket]);
+  
   
   
   return (
