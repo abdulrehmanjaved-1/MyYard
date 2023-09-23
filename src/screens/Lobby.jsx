@@ -1,10 +1,12 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from "react";
 import { useSocket } from "../context/SocketProvider";
 import ReactPlayer from "react-player";
 
 function LobbyScreen() {
   const [room, setRoom] = useState("");
   const [stream, setStream] = useState();
+  const [streamKey, setStreamKey] = useState(""); // Initialize with an empty string
+
   const socket = useSocket();
   const peer = new RTCPeerConnection({
     iceServers: [
@@ -20,7 +22,9 @@ function LobbyScreen() {
   useEffect(() => {
     // Listen for the "start-streaming" event from the backend
     socket.on("start-streaming", () => {
-      console.log("Received start-streaming event from the backend. Starting streaming...");
+      console.log(
+        "Received start-streaming event from the backend. Starting streaming..."
+      );
       startStreaming(); // Start streaming when the event is received
     });
 
@@ -34,7 +38,7 @@ function LobbyScreen() {
     try {
       const myStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
-        video: true
+        video: true,
       });
 
       // Add the tracks to the peer connection
@@ -47,31 +51,42 @@ function LobbyScreen() {
       await peer.setLocalDescription(offer);
 
       // Send the offer to the server
-      socket.emit('offer', peer.localDescription);
+      socket.emit("offer", peer.localDescription);
 
       // Set the stream in state
       setStream(myStream);
-
     } catch (error) {
       // Handle any errors that might occur when getting the user's media
       console.error("Error getting user media:", error);
     }
   };
-
   const handleStartStreaming = useCallback(async (e) => {
     e.preventDefault();
-
+  
     // Emit the "start-streaming" event to trigger streaming in the backend
-    socket.emit("start-streaming");
-  }, [socket]);
+    socket.emit("start-streaming", streamKey); // Pass the stream key as an argument
+  }, [socket, streamKey]);
+  
 
   return (
     <div>
       <h1>Lobby Screen</h1>
 
       <form onSubmit={handleStartStreaming}>
-        <label htmlFor="room">Room No:</label>
-        <input type="text" id='room' value={room} onChange={(e) => setRoom(e.target.value)} />
+        {/* <label htmlFor="room">Room No:</label>
+        <input
+          type="text"
+          id="room"
+          value={room}
+          onChange={(e) => setRoom(e.target.value)}
+        /> */}
+        <h3>Enter your Stream Key</h3>
+        <input
+          type="text"
+          id="streamKey"
+          value={streamKey}
+          onChange={(e) => setStreamKey(e.target.value)}
+        />
         <button>Start Streaming</button>
         {stream && (
           <>
