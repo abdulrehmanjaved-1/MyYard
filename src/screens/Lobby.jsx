@@ -33,7 +33,6 @@ function LobbyScreen() {
       socket.off("start-streaming");
     };
   }, [socket]);
-
   const startStreaming = async () => {
     try {
       const myStream = await navigator.mediaDevices.getUserMedia({
